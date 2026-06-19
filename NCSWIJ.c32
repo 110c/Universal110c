@@ -1,0 +1,174 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+if player.PlayerGui:FindFirstChild("NCSWIJ_c32") then
+    player.PlayerGui:FindFirstChild("NCSWIJ_c32"):Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NCSWIJ_c32"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = player.PlayerGui
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 220, 0, 140)
+Frame.Position = UDim2.new(0.5, -110, 0.3, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+Title.Text = "NCSWIJ.c32"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 16
+Title.Parent = Frame
+
+local NoClipButton = Instance.new("TextButton")
+NoClipButton.Size = UDim2.new(0.45, 0, 0, 28)
+NoClipButton.Position = UDim2.new(0.03, 0, 0.28, 0)
+NoClipButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+NoClipButton.Text = "NoClip OFF"
+NoClipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoClipButton.Font = Enum.Font.SourceSansBold
+NoClipButton.TextSize = 13
+NoClipButton.Parent = Frame
+
+local InfJumpButton = Instance.new("TextButton")
+InfJumpButton.Size = UDim2.new(0.45, 0, 0, 28)
+InfJumpButton.Position = UDim2.new(0.52, 0, 0.28, 0)
+InfJumpButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+InfJumpButton.Text = "InfJump OFF"
+InfJumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+InfJumpButton.Font = Enum.Font.SourceSansBold
+InfJumpButton.TextSize = 13
+InfJumpButton.Parent = Frame
+
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Size = UDim2.new(0.45, 0, 0, 20)
+SpeedLabel.Position = UDim2.new(0.03, 0, 0.58, 0)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "WalkSpeed:"
+SpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+SpeedLabel.Font = Enum.Font.SourceSansBold
+SpeedLabel.TextSize = 14
+SpeedLabel.Parent = Frame
+
+local SpeedBox = Instance.new("TextBox")
+SpeedBox.Size = UDim2.new(0.42, 0, 0, 25)
+SpeedBox.Position = UDim2.new(0.03, 0, 0.73, 0)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+SpeedBox.Text = "50"
+SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedBox.Font = Enum.Font.SourceSansBold
+SpeedBox.TextSize = 14
+SpeedBox.TextScaled = true
+SpeedBox.Parent = Frame
+
+local SpeedToggle = Instance.new("TextButton")
+SpeedToggle.Size = UDim2.new(0.45, 0, 0, 25)
+SpeedToggle.Position = UDim2.new(0.52, 0, 0.73, 0)
+SpeedToggle.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+SpeedToggle.Text = "WS OFF"
+SpeedToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedToggle.Font = Enum.Font.SourceSansBold
+SpeedToggle.TextSize = 14
+SpeedToggle.Parent = Frame
+
+local noclipEnabled = false
+local infJumpEnabled = false
+local wsEnabled = false
+local connections = {}
+local currentSpeed = 50
+local originalSpeed = 16
+
+local function updateWalkSpeed()
+    if humanoid and wsEnabled then
+        local num = tonumber(SpeedBox.Text)
+        if num then
+            currentSpeed = math.clamp(num, 0, 100000)
+            humanoid.WalkSpeed = currentSpeed
+        end
+    end
+end
+
+SpeedBox.FocusLost:Connect(function()
+    if wsEnabled then updateWalkSpeed() end
+end)
+
+local function toggleNoClip(state)
+    noclipEnabled = state
+    if state then
+        NoClipButton.Text = "NoClip ON"
+        NoClipButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        table.insert(connections, game:GetService("RunService").Stepped:Connect(function()
+            if not noclipEnabled then return end
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
+            end
+        end))
+    else
+        NoClipButton.Text = "NoClip OFF"
+        NoClipButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+    end
+end
+
+local function toggleInfJump(state)
+    infJumpEnabled = state
+    if state then
+        InfJumpButton.Text = "InfJump ON"
+        InfJumpButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        table.insert(connections, game:GetService("UserInputService").JumpRequest:Connect(function()
+            if not infJumpEnabled then return end
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end))
+    else
+        InfJumpButton.Text = "InfJump OFF"
+        InfJumpButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+    end
+end
+
+local function toggleWalkSpeed(state)
+    wsEnabled = state
+    if state then
+        SpeedToggle.Text = "WS ON"
+        SpeedToggle.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        updateWalkSpeed()
+    else
+        SpeedToggle.Text = "WS OFF"
+        SpeedToggle.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+        if humanoid then
+            humanoid.WalkSpeed = originalSpeed
+        end
+    end
+end
+
+NoClipButton.MouseButton1Click:Connect(function() toggleNoClip(not noclipEnabled) end)
+InfJumpButton.MouseButton1Click:Connect(function() toggleInfJump(not infJumpEnabled) end)
+SpeedToggle.MouseButton1Click:Connect(function() toggleWalkSpeed(not wsEnabled) end)
+
+game:GetService("RunService").Heartbeat:Connect(function()
+    if wsEnabled and humanoid and humanoid.WalkSpeed ~= currentSpeed then
+        humanoid.WalkSpeed = currentSpeed
+    end
+end)
+
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    humanoid = newChar:WaitForChild("Humanoid")
+    task.wait(0.6)
+    if noclipEnabled then toggleNoClip(true) end
+    if infJumpEnabled then toggleInfJump(true) end
+    if wsEnabled then toggleWalkSpeed(true) end
+end)
+
+toggleNoClip(false)
+toggleInfJump(false)
+toggleWalkSpeed(false)
