@@ -1,0 +1,263 @@
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game.CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 260, 0, 160)
+frame.Position = UDim2.new(0.5, -130, 0.4, -80)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+title.Text = "Fling Script"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.ArialBold
+title.TextSize = 16
+title.Parent = frame
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0.9, 0, 0, 45)
+toggleButton.Position = UDim2.new(0.05, 0, 0, 45)
+toggleButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+toggleButton.Text = "FLING OFF"
+toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.Font = Enum.Font.ArialBold
+toggleButton.TextSize = 18
+toggleButton.Parent = frame
+
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(0.9, 0, 0, 20)
+speedLabel.Position = UDim2.new(0.05, 0, 0, 100)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "Fly Speed: 100"
+speedLabel.TextColor3 = Color3.new(1,1,1)
+speedLabel.Font = Enum.Font.Arial
+speedLabel.TextSize = 15
+speedLabel.Parent = frame
+
+local speedBox = Instance.new("TextBox")
+speedBox.Size = UDim2.new(0.9, 0, 0, 25)
+speedBox.Position = UDim2.new(0.05, 0, 0, 125)
+speedBox.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+speedBox.Text = "100"
+speedBox.TextColor3 = Color3.new(1,1,1)
+speedBox.Font = Enum.Font.Arial
+speedBox.TextSize = 16
+speedBox.Parent = frame
+
+local dragging = false
+local dragStart, startPos
+
+title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+local flingEnabled = false
+local power = 100
+local flingConnections = {}
+local originalCameraSubject = nil
+
+local function send(text)
+    StarterGui:SetCore("SendNotification",{
+        Title = "Fling by danya23131",
+        Text = text,
+        Duration = 5
+    })
+end
+
+local function startFling()
+    originalCameraSubject = camera.CameraSubject  -- Save original camera
+
+    local fakepart = Instance.new("Part", workspace)
+    local att1 = Instance.new("Attachment", fakepart)
+    local att2 = Instance.new("Attachment", player.Character.HumanoidRootPart)
+    local body = Instance.new("AlignPosition", fakepart)
+    local mouse = player:GetMouse()
+
+    body.Attachment0 = att2
+    body.Attachment1 = att1
+    body.RigidityEnabled = true
+    body.Responsiveness = math.huge
+    body.MaxForce = math.huge
+    body.MaxVelocity = math.huge
+    body.MaxAxesForce = Vector3.new(math.huge,math.huge,math.huge)
+    body.Visible = true
+    body.Mode = Enum.PositionAlignmentMode.TwoAttachment
+
+    player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.StrafingNoPhysics)
+    send("Fling Started")
+
+    local oldcf = player.Character.HumanoidRootPart.CFrame
+    player.Character.HumanoidRootPart.CFrame = CFrame.new(Vector3.new(0,40000000,0)) * CFrame.fromEulerAnglesXYZ(math.rad(180),0,0)
+    player.Character.HumanoidRootPart.Velocity = Vector3.new(0,1000000,0)
+    task.wait(3)
+    player.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+    player.Character.HumanoidRootPart.CFrame = oldcf
+    task.wait(.2)   
+
+    local attack = 5
+    fakepart.Anchored = true
+    fakepart.Size = Vector3.new(5,5,5)
+    fakepart.Position = player.Character.HumanoidRootPart.Position
+    fakepart.CanCollide = false
+    fakepart.Transparency = 0.5
+    fakepart.Material = Enum.Material.ForceField
+
+    for i,v in pairs(player.Character:GetDescendants()) do
+        if v:IsA("BasePart") then
+            if v.Name ~= "HumanoidRootPart" then
+                v.Transparency = .75
+                v.Material = Enum.Material.Neon
+            end
+        elseif v:IsA("Decal") then
+            v:Remove()
+        end
+    end
+
+    local partic = Instance.new("ParticleEmitter", fakepart)
+    partic.Texture = "rbxassetid://6192809046"
+    partic.SpreadAngle = Vector2.new(-180,180)
+    partic.Rate = 45
+    partic.Size = NumberSequence.new(1,0)
+    partic.Transparency = NumberSequence.new(0.9)
+    partic.Lifetime = NumberRange.new(0.7,1)
+    partic.RotSpeed = NumberRange.new(-45,45)
+
+    camera.CameraSubject = fakepart
+
+    spawn(function()
+        while flingEnabled do task.wait()
+            for i = 0,1,0.01 do
+                task.wait()
+                fakepart.Color = Color3.fromHSV(i,1,1)
+                partic.Color = ColorSequence.new(Color3.fromHSV(i,1,1))
+            end
+        end
+    end)
+
+    spawn(function()
+        while flingEnabled do
+            player.Character.HumanoidRootPart.AssemblyAngularVelocity = Vector3.new(math.random(-500,50),math.random(-500,500) * power,math.random(-5,5))
+            task.wait(math.random(0,attack)/50) 
+        end
+    end)
+
+    local w,a,s,d = false,false,false,false
+
+    mouse.KeyDown:Connect(function(key)
+        if key == "w" then w = true end
+        if key == "a" then a = true end
+        if key == "s" then s = true end
+        if key == "d" then d = true end
+    end)
+
+    mouse.KeyUp:Connect(function(key)
+        if key == "w" then w = false end
+        if key == "a" then a = false end
+        if key == "s" then s = false end
+        if key == "d" then d = false end
+    end)
+
+    table.insert(flingConnections, game:GetService("RunService").Heartbeat:Connect(function()
+        if w then fakepart.Position = fakepart.Position + workspace.CurrentCamera.CFrame.LookVector * 2 end
+        if a then fakepart.Position = fakepart.Position - workspace.CurrentCamera.CFrame.RightVector * 2 end
+        if s then fakepart.Position = fakepart.Position - workspace.CurrentCamera.CFrame.LookVector * 2 end
+        if d then fakepart.Position = fakepart.Position + workspace.CurrentCamera.CFrame.RightVector * 2 end
+    end))
+
+    local isdown = false
+    mouse.Button1Down:Connect(function() isdown = true end)
+    mouse.Button1Up:Connect(function() isdown = false end)
+
+    table.insert(flingConnections, game:GetService("RunService").Heartbeat:Connect(function()
+        if isdown and flingEnabled then
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(math.random(-5,5)/5,math.random(0,8)/2,math.random(-5,5)/5)) * CFrame.fromEulerAnglesXYZ(0,math.rad(45),0)
+            player.Character.HumanoidRootPart.AssemblyAngularVelocity = Vector3.new(10000,9999,-9999)
+            player.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(-17.7,500,17.7)
+        end
+    end))
+
+    spawn(function()
+        while flingEnabled do
+            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+            task.wait(.5)
+            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+            task.wait(.5)
+        end
+    end)
+
+    while flingEnabled do
+        fakepart.Rotation = player.Character.HumanoidRootPart.Rotation
+        player.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        if math.random(0,1)==1 then
+            player.Character.Humanoid.Jump = true
+        else
+            player.Character.Humanoid.Jump = false
+        end
+        if not isdown then
+            player.Character.HumanoidRootPart.CFrame = fakepart.CFrame
+        end
+        player.Character.HumanoidRootPart.Velocity = Vector3.new(math.random(-250,250),math.random(-500,500),math.random(-250,250))
+        task.wait()
+    end
+end
+
+toggleButton.MouseButton1Click:Connect(function()
+    flingEnabled = not flingEnabled
+    if flingEnabled then
+        toggleButton.Text = "FLING ON"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        startFling()
+    else
+        toggleButton.Text = "FLING OFF"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        
+        if originalCameraSubject then
+            camera.CameraSubject = originalCameraSubject
+        end
+        
+        send("Fling Disabled - Camera Angle Restored")
+        
+        for _, conn in pairs(flingConnections) do
+            pcall(function() conn:Disconnect() end)
+        end
+        flingConnections = {}
+    end
+end)
+
+speedBox.FocusLost:Connect(function()
+    local num = tonumber(speedBox.Text)
+    if num then
+        power = num
+        speedLabel.Text = "Fly Speed: " .. num
+    else
+        speedBox.Text = tostring(power)
+    end
+end)
