@@ -1,0 +1,235 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+if player.PlayerGui:FindFirstChild("SFTP_c32") then
+    player.PlayerGui:FindFirstChild("SFTP_c32"):Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SFTP_c32"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = player.PlayerGui
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 220, 0, 400)
+Frame.Position = UDim2.new(0.5, -110, 0.22, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 32)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Title.Text = "SFTP.c32"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 17
+Title.Parent = Frame
+
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Size = UDim2.new(1, 0, 0, 18)
+Subtitle.Position = UDim2.new(0, 0, 0, 32)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Text = "110c"
+Subtitle.TextColor3 = Color3.fromRGB(160, 160, 160)
+Subtitle.Font = Enum.Font.SourceSans
+Subtitle.TextSize = 13
+Subtitle.Parent = Frame
+
+local TargetLabel = Instance.new("TextLabel")
+TargetLabel.Size = UDim2.new(0.94, 0, 0, 20)
+TargetLabel.Position = UDim2.new(0.03, 0, 0.13, 0)
+TargetLabel.BackgroundTransparency = 1
+TargetLabel.Text = "Target Player Name:"
+TargetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+TargetLabel.Font = Enum.Font.SourceSansBold
+TargetLabel.TextSize = 14
+TargetLabel.Parent = Frame
+
+local TargetBox = Instance.new("TextBox")
+TargetBox.Size = UDim2.new(0.94, 0, 0, 28)
+TargetBox.Position = UDim2.new(0.03, 0, 0.19, 0)
+TargetBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TargetBox.Text = ""
+TargetBox.PlaceholderText = "Empty = random"
+TargetBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TargetBox.Font = Enum.Font.SourceSansBold
+TargetBox.TextSize = 13
+TargetBox.TextScaled = true
+TargetBox.Parent = Frame
+
+local OFF_COLOR = Color3.fromRGB(220, 20, 60)
+local ON_COLOR = Color3.fromRGB(0, 200, 80)
+
+local function getTarget()
+    local input = TargetBox.Text:gsub("%s+", "")
+    if input == "" then
+        local players = game.Players:GetPlayers()
+        if #players > 1 then
+            local rand = players[math.random(2, #players)]
+            return rand ~= player and rand or nil
+        end
+        return nil
+    end
+    for _, plr in ipairs(game.Players:GetPlayers()) do
+        if plr ~= player and (plr.Name:lower():find(input:lower()) or plr.DisplayName:lower():find(input:lower())) then
+            return plr
+        end
+    end
+    return nil
+end
+
+local function updateCharacter()
+    character = player.Character
+    if character then
+        humanoid = character:WaitForChild("Humanoid")
+        rootPart = character:WaitForChild("HumanoidRootPart")
+    end
+end
+
+local function createLoopButton(name, yPos, loopFunc)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.94, 0, 0, 32)
+    btn.Position = UDim2.new(0.03, 0, yPos, 0)
+    btn.BackgroundColor3 = OFF_COLOR
+    btn.Text = name .. " OFF"
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 13.5
+    btn.Parent = Frame
+
+    local enabled = false
+    local conn = nil
+
+    btn.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        if enabled then
+            btn.Text = name .. " ON"
+            btn.BackgroundColor3 = ON_COLOR
+            conn = game:GetService("RunService").Heartbeat:Connect(function()
+                if not enabled then return end
+                local target = getTarget()
+                if not target or not target.Character then return end
+                updateCharacter()
+                if not rootPart then return end
+                loopFunc(target.Character, rootPart)
+            end)
+        else
+            btn.Text = name .. " OFF"
+            btn.BackgroundColor3 = OFF_COLOR
+            if conn then 
+                conn:Disconnect() 
+                conn = nil 
+            end
+        end
+    end)
+end
+
+local tpBtn = Instance.new("TextButton")
+tpBtn.Size = UDim2.new(0.94, 0, 0, 32)
+tpBtn.Position = UDim2.new(0.03, 0, 0.27, 0)
+tpBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+tpBtn.Text = "Teleport"
+tpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpBtn.Font = Enum.Font.SourceSansBold
+tpBtn.TextSize = 14
+tpBtn.Parent = Frame
+
+tpBtn.MouseButton1Click:Connect(function()
+    local target = getTarget()
+    if not target or not target.Character then return end
+    updateCharacter()
+    local head = target.Character:FindFirstChild("Head")
+    if head and rootPart then
+        local offset = humanoid.HipHeight + rootPart.Size.Y/2 + head.Size.Y/2 + 0.2
+        rootPart.CFrame = CFrame.new(head.Position + Vector3.new(0, offset, 0))
+    end
+end)
+
+createLoopButton("Loop Teleport", 0.37, function(targetChar, myRoot)
+    local head = targetChar:FindFirstChild("Head")
+    if head then
+        local offset = humanoid.HipHeight + rootPart.Size.Y/2 + head.Size.Y/2 + 0.2
+        myRoot.CFrame = CFrame.new(head.Position + Vector3.new(0, offset, 0))
+    end
+end)
+
+createLoopButton("Loop Teleport + ShiftLock", 0.455, function(targetChar, myRoot)
+    local head = targetChar:FindFirstChild("Head")
+    if head then
+        local offset = humanoid.HipHeight + rootPart.Size.Y/2 + head.Size.Y/2 + 0.2
+        myRoot.CFrame = CFrame.new(head.Position + Vector3.new(0, offset, 0)) * head.CFrame.Rotation
+    end
+end)
+
+createLoopButton("Loop Torso", 0.54, function(targetChar, myRoot)
+    local torso = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
+    if torso then 
+        myRoot.CFrame = CFrame.new(torso.Position) 
+    end
+end)
+
+createLoopButton("Loop Torso + ShiftLock", 0.625, function(targetChar, myRoot)
+    local torso = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
+    if torso then 
+        myRoot.CFrame = CFrame.new(torso.Position) * torso.CFrame.Rotation 
+    end
+end)
+
+createLoopButton("Loop Front", 0.71, function(targetChar, myRoot)
+    local torso = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
+    if torso then
+        local frontPos = (torso.CFrame * CFrame.new(0, 0, -10)).Position
+        local groundedY = torso.Position.Y - torso.Size.Y/2 + humanoid.HipHeight + rootPart.Size.Y/2 - 0.1
+        myRoot.CFrame = CFrame.new(frontPos.X, groundedY, frontPos.Z) * torso.CFrame.Rotation
+    end
+end)
+
+createLoopButton("Loop Behind", 0.795, function(targetChar, myRoot)
+    local torso = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
+    if torso then
+        local backPos = (torso.CFrame * CFrame.new(0, 0, 10)).Position
+        local groundedY = torso.Position.Y - torso.Size.Y/2 + humanoid.HipHeight + rootPart.Size.Y/2 - 0.1
+        myRoot.CFrame = CFrame.new(backPos.X, groundedY, backPos.Z) * torso.CFrame.Rotation
+    end
+end)
+
+createLoopButton("Loop Under", 0.88, function(targetChar, myRoot)
+    local torso = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
+    if torso then
+        local underY = torso.Position.Y - 15
+        myRoot.CFrame = CFrame.new(torso.Position.X, underY, torso.Position.Z)
+    end
+end)
+
+createLoopButton("Loop Orbit", 0.965, function(targetChar, myRoot)
+    local torso = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
+    if torso then
+        local time = tick()
+        local radius = 10
+        local groundedY = torso.Position.Y - torso.Size.Y/2 + humanoid.HipHeight + rootPart.Size.Y/2 - 0.1
+        local x = torso.Position.X + math.cos(time * 2) * radius
+        local z = torso.Position.Z + math.sin(time * 2) * radius
+        myRoot.CFrame = CFrame.new(x, groundedY, z)
+    end
+end)
+
+local Watermark = Instance.new("TextLabel")
+Watermark.Size = UDim2.new(1, 0, 0, 20)
+Watermark.Position = UDim2.new(0, 0, 1, -22)
+Watermark.BackgroundTransparency = 1
+Watermark.Text = "110c"
+Watermark.TextColor3 = Color3.fromRGB(100, 100, 100)
+Watermark.Font = Enum.Font.SourceSans
+Watermark.TextSize = 12
+Watermark.TextXAlignment = Enum.TextXAlignment.Right
+Watermark.Parent = Frame
+
+player.CharacterAdded:Connect(function()
+    task.wait(0.6)
+    updateCharacter()
+end)
