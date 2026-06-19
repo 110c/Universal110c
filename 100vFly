@@ -1,0 +1,153 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+if player.PlayerGui:FindFirstChild("100vFly") then
+    player.PlayerGui:FindFirstChild("100vFly"):Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "100vFly"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = player.PlayerGui
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 170, 0, 160)
+Frame.Position = UDim2.new(0.5, -85, 0.35, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 28)
+Title.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+Title.Text = "100v Fly"
+Title.TextColor3 = Color3.fromRGB(0, 0, 0)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
+Title.Parent = Frame
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0.9, 0, 0, 34)
+ToggleButton.Position = UDim2.new(0.05, 0, 0.28, 0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 40, 60)
+ToggleButton.Text = "Fly OFF"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.TextSize = 15
+ToggleButton.Parent = Frame
+
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Size = UDim2.new(0.45, 0, 0, 16)
+SpeedLabel.Position = UDim2.new(0.05, 0, 0.58, 0)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "Speed"
+SpeedLabel.TextColor3 = Color3.fromRGB(60, 60, 60)
+SpeedLabel.Font = Enum.Font.SourceSansBold
+SpeedLabel.TextSize = 13
+SpeedLabel.Parent = Frame
+
+local SpeedBox = Instance.new("TextBox")
+SpeedBox.Size = UDim2.new(0.45, 0, 0, 24)
+SpeedBox.Position = UDim2.new(0.5, 0, 0.55, 0)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SpeedBox.Text = "60"
+SpeedBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+SpeedBox.Font = Enum.Font.SourceSans
+SpeedBox.TextSize = 13
+SpeedBox.Parent = Frame
+
+local flying = false
+local connection = nil
+local speed = 60
+
+local keys = {W=false, A=false, S=false, D=false, Space=false, Ctrl=false}
+
+local function startFlying()
+    humanoid.PlatformStand = true
+    
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "FlyVelocity"
+    bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bv.Velocity = Vector3.new(0,0,0)
+    bv.Parent = rootPart
+    
+    connection = game:GetService("RunService").Heartbeat:Connect(function()
+        if not flying then return end
+        
+        local move = Vector3.new(0, 0, 0)
+        local cam = workspace.CurrentCamera
+        
+        if keys.W then move = move + cam.CFrame.LookVector end
+        if keys.S then move = move - cam.CFrame.LookVector end
+        if keys.A then move = move - cam.CFrame.RightVector end
+        if keys.D then move = move + cam.CFrame.RightVector end
+        if keys.Space then move = move + Vector3.new(0,1,0) end
+        if keys.Ctrl then move = move - Vector3.new(0,1,0) end
+        
+        if move.Magnitude > 0 then
+            bv.Velocity = move.Unit * speed
+        else
+            bv.Velocity = Vector3.new(0,0,0)
+        end
+    end)
+end
+
+local function stopFlying()
+    flying = false
+    if connection then connection:Disconnect() end
+    local bv = rootPart:FindFirstChild("FlyVelocity")
+    if bv then bv:Destroy() end
+    humanoid.PlatformStand = false
+end
+
+ToggleButton.MouseButton1Click:Connect(function()
+    flying = not flying
+    if flying then
+        ToggleButton.Text = "Fly ON"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 220, 100)
+        startFlying()
+    else
+        ToggleButton.Text = "Fly OFF"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 40, 60)
+        stopFlying()
+    end
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.W then keys.W = true end
+    if input.KeyCode == Enum.KeyCode.S then keys.S = true end
+    if input.KeyCode == Enum.KeyCode.A then keys.A = true end
+    if input.KeyCode == Enum.KeyCode.D then keys.D = true end
+    if input.KeyCode == Enum.KeyCode.Space then keys.Space = true end
+    if input.KeyCode == Enum.KeyCode.LeftControl then keys.Ctrl = true end
+end)
+
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.W then keys.W = false end
+    if input.KeyCode == Enum.KeyCode.S then keys.S = false end
+    if input.KeyCode == Enum.KeyCode.A then keys.A = false end
+    if input.KeyCode == Enum.KeyCode.D then keys.D = false end
+    if input.KeyCode == Enum.KeyCode.Space then keys.Space = false end
+    if input.KeyCode == Enum.KeyCode.LeftControl then keys.Ctrl = false end
+end)
+
+SpeedBox.FocusLost:Connect(function()
+    speed = tonumber(SpeedBox.Text) or 60
+end)
+
+player.CharacterAdded:Connect(function(newChar)
+    task.wait(0.8)
+    character = newChar
+    humanoid = newChar:WaitForChild("Humanoid")
+    rootPart = newChar:WaitForChild("HumanoidRootPart")
+    if flying then
+        flying = false
+        ToggleButton.Text = "Fly OFF"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 40, 60)
+    end
+end)
