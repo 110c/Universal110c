@@ -1,0 +1,157 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local lp = Players.LocalPlayer
+local camera = Workspace.CurrentCamera
+
+if _G["110c_TPC"] then return end
+_G["110c_TPC"] = true
+
+local sg = Instance.new("ScreenGui")
+sg.Name = "110c.tpc"
+sg.ResetOnSpawn = false
+sg.Parent = lp:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 240, 0, 145)
+frame.Position = UDim2.new(0.5, -120, 0.35, 0)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+frame.BorderSizePixel = 0
+frame.BackgroundTransparency = 0.2
+frame.Active = true
+frame.Draggable = true
+frame.Parent = sg
+
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 36)
+titleBar.BackgroundColor3 = Color3.fromRGB(10, 10, 18)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 1, 0)
+title.BackgroundTransparency = 1
+title.Text = "110c"
+title.TextColor3 = Color3.fromRGB(200, 200, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.Parent = titleBar
+
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(0.48, 0, 0, 20)
+status.Position = UDim2.new(0, 10, 0, 45)
+status.BackgroundTransparency = 1
+status.Text = "Click TP: OFF"
+status.TextColor3 = Color3.fromRGB(255, 90, 90)
+status.Font = Enum.Font.Gotham
+status.TextSize = 14
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.Parent = frame
+
+local keyLabel = Instance.new("TextLabel")
+keyLabel.Size = UDim2.new(0.3, 0, 0, 20)
+keyLabel.Position = UDim2.new(0.48, 0, 0, 45)
+keyLabel.BackgroundTransparency = 1
+keyLabel.Text = "Key: /"
+keyLabel.TextColor3 = Color3.fromRGB(180, 180, 255)
+keyLabel.Font = Enum.Font.Gotham
+keyLabel.TextSize = 14
+keyLabel.TextXAlignment = Enum.TextXAlignment.Left
+keyLabel.Parent = frame
+
+local keybindBtn = Instance.new("TextButton")
+keybindBtn.Size = UDim2.new(0.22, 0, 0, 22)
+keybindBtn.Position = UDim2.new(0.78, 0, 0, 44)
+keybindBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+keybindBtn.Text = "Set"
+keybindBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
+keybindBtn.Font = Enum.Font.Gotham
+keybindBtn.TextSize = 13
+keybindBtn.Parent = frame
+
+local selectorBtn = Instance.new("TextButton")
+selectorBtn.Size = UDim2.new(0.88, 0, 0, 28)
+selectorBtn.Position = UDim2.new(0.06, 0, 0, 78)
+selectorBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+selectorBtn.Text = "Mouse: Left Click ▼"
+selectorBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
+selectorBtn.Font = Enum.Font.Gotham
+selectorBtn.TextSize = 13
+selectorBtn.Parent = frame
+
+local clickTpEnabled = false
+local selectedMouseButton = 0
+local currentKeybind = Enum.KeyCode.Slash
+local settingKeybind = false
+
+local function teleportToMouse()
+    local mouse = lp:GetMouse()
+    local ray = camera:ScreenPointToRay(mouse.X, mouse.Y)
+    local rayParams = RaycastParams.new()
+    rayParams.FilterDescendantsInstances = {lp.Character or {}}
+    rayParams.FilterType = Enum.RaycastFilterType.Exclude
+    rayParams.IgnoreWater = true
+
+    local result = Workspace:Raycast(ray.Origin, ray.Direction * 2000, rayParams)
+    if result and result.Position then
+        local root = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = CFrame.new(result.Position + Vector3.new(0, 3.5, 0))
+        end
+    end
+end
+
+keybindBtn.MouseButton1Click:Connect(function()
+    settingKeybind = true
+    keybindBtn.Text = "..."
+    keybindBtn.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
+end)
+
+selectorBtn.MouseButton1Click:Connect(function()
+    selectedMouseButton = (selectedMouseButton + 1) % 3
+    if selectedMouseButton == 0 then
+        selectorBtn.Text = "Mouse: Left Click ▼"
+    elseif selectedMouseButton == 1 then
+        selectorBtn.Text = "Mouse: Right Click ▼"
+    else
+        selectorBtn.Text = "Mouse: Scroll Wheel ▼"
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if settingKeybind then
+        if input.KeyCode ~= Enum.KeyCode.Unknown then
+            currentKeybind = input.KeyCode
+            keyLabel.Text = "Key: " .. currentKeybind.Name
+            settingKeybind = false
+            keybindBtn.Text = "Set"
+            keybindBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+        end
+        return
+    end
+
+    if input.KeyCode == currentKeybind then
+        clickTpEnabled = not clickTpEnabled
+        status.Text = "Click TP: " .. (clickTpEnabled and "ON" or "OFF")
+        status.TextColor3 = clickTpEnabled and Color3.fromRGB(90,255,90) or Color3.fromRGB(255,90,90)
+        return
+    end
+
+    if not clickTpEnabled then return end
+
+    local trigger = false
+    if selectedMouseButton == 0 and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        trigger = true
+    elseif selectedMouseButton == 1 and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        trigger = true
+    elseif selectedMouseButton == 2 and input.UserInputType == Enum.UserInputType.MouseButton3 then
+        trigger = true
+    end
+
+    if trigger then
+        teleportToMouse()
+    end
+end)
