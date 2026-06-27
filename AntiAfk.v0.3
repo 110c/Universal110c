@@ -1,0 +1,413 @@
+local player = game.Players.LocalPlayer
+if player:FindFirstChild("PlayerGui"):FindFirstChild("AntiAfk.v0.3") then return end
+
+local humanoid = nil
+local function updateHumanoid()
+    local char = player.Character or player.CharacterAdded:Wait()
+    humanoid = char:WaitForChild("Humanoid", 5)
+end
+updateHumanoid()
+player.CharacterAdded:Connect(updateHumanoid)
+
+local topGui = Instance.new("ScreenGui")
+topGui.Name = "110cTop"
+topGui.ResetOnSpawn = false
+topGui.Parent = player.PlayerGui
+
+local topLabel = Instance.new("TextLabel")
+topLabel.Size = UDim2.new(0, 90, 0, 24)
+topLabel.Position = UDim2.new(0.5, -45, 0, 8)
+topLabel.AnchorPoint = Vector2.new(0.5, 0)
+topLabel.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+topLabel.TextColor3 = Color3.new(0, 0, 0)
+topLabel.Text = "110c"
+topLabel.TextScaled = true
+topLabel.Font = Enum.Font.GothamBold
+topLabel.TextStrokeTransparency = 0.7
+topLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+topLabel.BorderSizePixel = 0
+topLabel.Active = false
+topLabel.Draggable = false
+topLabel.Parent = topGui
+
+local wm = Instance.new("TextLabel")
+wm.Size = UDim2.new(0, 80, 0, 25)
+wm.Position = UDim2.new(0, 10, 1, -30)
+wm.BackgroundTransparency = 1
+wm.Text = "110c"
+wm.TextColor3 = Color3.new(0,0,0)
+wm.TextScaled = true
+wm.Font = Enum.Font.GothamBold
+wm.TextStrokeTransparency = 0
+wm.TextStrokeColor3 = Color3.fromRGB(255,215,0)
+wm.Parent = player:WaitForChild("PlayerGui")
+
+local function createMinimize(titleBar, frame)
+    local minBtn = Instance.new("TextButton")
+    minBtn.Size = UDim2.new(0, 30, 0, 30)
+    minBtn.Position = UDim2.new(1, -38, 0, 2)
+    minBtn.BackgroundTransparency = 1
+    minBtn.Text = "−"
+    minBtn.TextColor3 = Color3.new(0,0,0)
+    minBtn.TextScaled = true
+    minBtn.Font = Enum.Font.GothamBold
+    minBtn.Parent = titleBar
+
+    local minimized = false
+    local origSize = frame.Size
+    minBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        if minimized then
+            frame.Size = UDim2.new(0, origSize.X.Offset, 0, 38)
+            for _, v in pairs(frame:GetChildren()) do
+                if v ~= titleBar then
+                    v.Visible = false
+                end
+            end
+            minBtn.Text = "+"
+        else
+            frame.Size = origSize
+            for _, v in pairs(frame:GetChildren()) do
+                if v ~= titleBar then
+                    v.Visible = true
+                end
+            end
+            minBtn.Text = "−"
+        end
+    end)
+end
+
+local afkGui = Instance.new("ScreenGui")
+afkGui.Name = "AntiAfk.v0.3"
+afkGui.ResetOnSpawn = false
+afkGui.Parent = player.PlayerGui
+
+local afkFrame = Instance.new("Frame")
+afkFrame.Size = UDim2.new(0, 190, 0, 140)
+afkFrame.Position = UDim2.new(0.5, -340, 0.5, -70)
+afkFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+afkFrame.Active = true
+afkFrame.Draggable = true
+afkFrame.Parent = afkGui
+
+local afkTitle = Instance.new("TextLabel")
+afkTitle.Size = UDim2.new(1, 0, 0, 35)
+afkTitle.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+afkTitle.Text = "ANTI AFK"
+afkTitle.TextColor3 = Color3.new(0, 0, 0)
+afkTitle.TextScaled = true
+afkTitle.Font = Enum.Font.GothamBold
+afkTitle.Parent = afkFrame
+createMinimize(afkTitle, afkFrame)
+
+local delayFrame = Instance.new("Frame")
+delayFrame.Size = UDim2.new(0.88, 0, 0, 32)
+delayFrame.Position = UDim2.new(0.06, 0, 0.35, 0)
+delayFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+delayFrame.Parent = afkFrame
+
+local minusBtn = Instance.new("TextButton")
+minusBtn.Size = UDim2.new(0.22, 0, 1, 0)
+minusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+minusBtn.Text = "-"
+minusBtn.TextColor3 = Color3.new(1, 1, 1)
+minusBtn.TextScaled = true
+minusBtn.Font = Enum.Font.GothamBold
+minusBtn.Parent = delayFrame
+
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(0.56, 0, 1, 0)
+delayLabel.Position = UDim2.new(0.22, 0, 0, 0)
+delayLabel.BackgroundTransparency = 1
+delayLabel.Text = "10"
+delayLabel.TextColor3 = Color3.new(1, 1, 1)
+delayLabel.TextScaled = true
+delayLabel.Font = Enum.Font.GothamBold
+delayLabel.Parent = delayFrame
+
+local plusBtn = Instance.new("TextButton")
+plusBtn.Size = UDim2.new(0.22, 0, 1, 0)
+plusBtn.Position = UDim2.new(0.78, 0, 0, 0)
+plusBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+plusBtn.Text = "+"
+plusBtn.TextColor3 = Color3.new(1, 1, 1)
+plusBtn.TextScaled = true
+plusBtn.Font = Enum.Font.GothamBold
+plusBtn.Parent = delayFrame
+
+local afkToggle = Instance.new("TextButton")
+afkToggle.Size = UDim2.new(0.8, 0, 0, 30)
+afkToggle.Position = UDim2.new(0.1, 0, 0.68, 0)
+afkToggle.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+afkToggle.Text = "ON"
+afkToggle.TextColor3 = Color3.new(1, 1, 1)
+afkToggle.TextScaled = true
+afkToggle.Font = Enum.Font.GothamBold
+afkToggle.Parent = afkFrame
+
+local delayTime = 10
+local afkEnabled = true
+
+local function jump()
+    if humanoid and humanoid.Health > 0 then
+        humanoid.Jump = true
+        task.delay(0.05, function() if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end)
+    end
+end
+
+task.spawn(function()
+    while true do
+        if afkEnabled then jump() end
+        task.wait(delayTime)
+    end
+end)
+
+afkToggle.MouseButton1Click:Connect(function()
+    afkEnabled = not afkEnabled
+    afkToggle.BackgroundColor3 = afkEnabled and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+    afkToggle.Text = afkEnabled and "ON" or "OFF"
+end)
+
+local holding = false
+local function changeDelay(amount)
+    delayTime = math.clamp(delayTime + amount, 1, 60)
+    delayLabel.Text = tostring(delayTime)
+end
+
+minusBtn.MouseButton1Down:Connect(function() 
+    changeDelay(-1) 
+    task.spawn(function() 
+        holding = true 
+        task.wait(0.5) 
+        while holding do changeDelay(-1) task.wait(0.08) end 
+    end) 
+end)
+
+plusBtn.MouseButton1Down:Connect(function() 
+    changeDelay(1) 
+    task.spawn(function() 
+        holding = true 
+        task.wait(0.5) 
+        while holding do changeDelay(1) task.wait(0.08) end 
+    end) 
+end)
+
+minusBtn.MouseButton1Up:Connect(function() holding = false end)
+plusBtn.MouseButton1Up:Connect(function() holding = false end)
+
+local swGui = Instance.new("ScreenGui")
+swGui.Name = "Stopwatch.v0.3"
+swGui.ResetOnSpawn = false
+swGui.Parent = player.PlayerGui
+
+local swFrame = Instance.new("Frame")
+swFrame.Size = UDim2.new(0, 240, 0, 140)
+swFrame.Position = UDim2.new(0.5, 130, 0.5, -70)
+swFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+swFrame.Active = true
+swFrame.Draggable = true
+swFrame.Parent = swGui
+
+local swTitle = Instance.new("TextLabel")
+swTitle.Size = UDim2.new(1, 0, 0, 35)
+swTitle.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+swTitle.Text = "STOPWATCH"
+swTitle.TextColor3 = Color3.new(0, 0, 0)
+swTitle.TextScaled = true
+swTitle.Font = Enum.Font.GothamBold
+swTitle.Parent = swFrame
+createMinimize(swTitle, swFrame)
+
+local swTimeLabel = Instance.new("TextLabel")
+swTimeLabel.Size = UDim2.new(0.95, 0, 0, 45)
+swTimeLabel.Position = UDim2.new(0.025, 0, 0.32, 0)
+swTimeLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+swTimeLabel.Text = "00:00:00.00"
+swTimeLabel.TextColor3 = Color3.new(1, 1, 1)
+swTimeLabel.TextScaled = true
+swTimeLabel.Font = Enum.Font.GothamBold
+swTimeLabel.Parent = swFrame
+
+local swStartBtn = Instance.new("TextButton")
+swStartBtn.Size = UDim2.new(0.45, 0, 0, 32)
+swStartBtn.Position = UDim2.new(0.05, 0, 0.72, 0)
+swStartBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+swStartBtn.Text = "START"
+swStartBtn.TextColor3 = Color3.new(1, 1, 1)
+swStartBtn.TextScaled = true
+swStartBtn.Font = Enum.Font.GothamBold
+swStartBtn.Parent = swFrame
+
+local swResetBtn = Instance.new("TextButton")
+swResetBtn.Size = UDim2.new(0.45, 0, 0, 32)
+swResetBtn.Position = UDim2.new(0.5, 0, 0.72, 0)
+swResetBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+swResetBtn.Text = "RESET"
+swResetBtn.TextColor3 = Color3.new(1, 1, 1)
+swResetBtn.TextScaled = true
+swResetBtn.Font = Enum.Font.GothamBold
+swResetBtn.Parent = swFrame
+
+local swRunning = false
+local swStartTime = 0
+local swPausedTime = 0
+
+local function swFormatTime()
+    local elapsed = swRunning and (os.clock() - swStartTime) or swPausedTime
+    local h = math.floor(elapsed / 3600)
+    local m = math.floor((elapsed % 3600) / 60)
+    local s = math.floor(elapsed % 60)
+    local ms = math.floor((elapsed % 1) * 100)
+    return string.format("%02d:%02d:%02d.%02d", h, m, s, ms)
+end
+
+task.spawn(function()
+    while true do
+        if swRunning then swTimeLabel.Text = swFormatTime() end
+        task.wait(0.01)
+    end
+end)
+
+swStartBtn.MouseButton1Click:Connect(function()
+    if swRunning then
+        swPausedTime = os.clock() - swStartTime
+        swRunning = false
+        swStartBtn.Text = "RESUME"
+        swStartBtn.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+    else
+        swStartTime = os.clock() - swPausedTime
+        swRunning = true
+        swStartBtn.Text = "PAUSE"
+        swStartBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    end
+end)
+
+swResetBtn.MouseButton1Click:Connect(function()
+    if not swRunning then
+        swPausedTime = 0
+        swTimeLabel.Text = "00:00:00.00"
+        swStartBtn.Text = "START"
+        swStartBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    end
+end)
+
+local timerGui = Instance.new("ScreenGui")
+timerGui.Name = "Timer.v0.3"
+timerGui.ResetOnSpawn = false
+timerGui.Parent = player.PlayerGui
+
+local timerFrame = Instance.new("Frame")
+timerFrame.Size = UDim2.new(0, 240, 0, 140)
+timerFrame.Position = UDim2.new(0.5, 380, 0.5, -70)
+timerFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+timerFrame.Active = true
+timerFrame.Draggable = true
+timerFrame.Parent = timerGui
+
+local timerTitle = Instance.new("TextLabel")
+timerTitle.Size = UDim2.new(1, 0, 0, 35)
+timerTitle.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+timerTitle.Text = "TIMER"
+timerTitle.TextColor3 = Color3.new(0, 0, 0)
+timerTitle.TextScaled = true
+timerTitle.Font = Enum.Font.GothamBold
+timerTitle.Parent = timerFrame
+createMinimize(timerTitle, timerFrame)
+
+local timeBox = Instance.new("TextBox")
+timeBox.Size = UDim2.new(0.95, 0, 0, 45)
+timeBox.Position = UDim2.new(0.025, 0, 0.32, 0)
+timeBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+timeBox.Text = "00:05:00"
+timeBox.TextColor3 = Color3.new(1, 1, 1)
+timeBox.TextScaled = true
+timeBox.Font = Enum.Font.GothamBold
+timeBox.ClearTextOnFocus = false
+timeBox.Parent = timerFrame
+
+local timerStartBtn = Instance.new("TextButton")
+timerStartBtn.Size = UDim2.new(0.45, 0, 0, 32)
+timerStartBtn.Position = UDim2.new(0.05, 0, 0.72, 0)
+timerStartBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+timerStartBtn.Text = "START"
+timerStartBtn.TextColor3 = Color3.new(1, 1, 1)
+timerStartBtn.TextScaled = true
+timerStartBtn.Font = Enum.Font.GothamBold
+timerStartBtn.Parent = timerFrame
+
+local timerResetBtn = Instance.new("TextButton")
+timerResetBtn.Size = UDim2.new(0.45, 0, 0, 32)
+timerResetBtn.Position = UDim2.new(0.5, 0, 0.72, 0)
+timerResetBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+timerResetBtn.Text = "RESET"
+timerResetBtn.TextColor3 = Color3.new(1, 1, 1)
+timerResetBtn.TextScaled = true
+timerResetBtn.Font = Enum.Font.GothamBold
+timerResetBtn.Parent = timerFrame
+
+local countdownRunning = false
+local countdownTime = 300
+
+local function formatTime(seconds)
+    local h = math.floor(seconds / 3600)
+    local m = math.floor((seconds % 3600) / 60)
+    local s = seconds % 60
+    return string.format("%02d:%02d:%02d", h, m, s)
+end
+
+timeBox.Text = formatTime(countdownTime)
+
+timeBox.FocusLost:Connect(function()
+    if not countdownRunning then
+        local text = timeBox.Text:gsub(":", "")
+        local num = tonumber(text) or 0
+        num = math.clamp(num, 0, 995959)
+        local h = math.floor(num / 10000)
+        local m = math.floor((num % 10000) / 100)
+        local s = num % 100
+        countdownTime = h*3600 + m*60 + s
+        timeBox.Text = formatTime(countdownTime)
+    end
+end)
+
+timerStartBtn.MouseButton1Click:Connect(function()
+    if countdownRunning then
+        countdownRunning = false
+        timerStartBtn.Text = "START"
+        timerStartBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        timeBox.TextEditable = true
+    else
+        if countdownTime > 0 then
+            countdownRunning = true
+            timerStartBtn.Text = "STOP"
+            timerStartBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+            timeBox.TextEditable = false
+        end
+    end
+end)
+
+timerResetBtn.MouseButton1Click:Connect(function()
+    if not countdownRunning then
+        countdownTime = 0
+        timeBox.Text = "00:00:00"
+        timerStartBtn.Text = "START"
+        timerStartBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        timeBox.TextEditable = true
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if countdownRunning and countdownTime > 0 then
+            countdownTime -= 1
+            timeBox.Text = formatTime(countdownTime)
+            if countdownTime <= 0 then
+                countdownRunning = false
+                timerStartBtn.Text = "START"
+                timerStartBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+                timeBox.TextEditable = true
+            end
+        end
+        task.wait(1)
+    end
+end)
