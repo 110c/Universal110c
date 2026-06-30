@@ -1,0 +1,132 @@
+local CoreGui = game.CoreGui
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+for _, v in ipairs(CoreGui:GetChildren()) do
+    if v.Name == "110c_TextureRemover" then v:Destroy() end
+end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "110c_TextureRemover"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = CoreGui
+
+local smallBtn = Instance.new("TextButton")
+smallBtn.Size = UDim2.new(0, 70, 0, 70)
+smallBtn.Position = UDim2.new(0, 20, 0.5, -35)
+smallBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+smallBtn.Text = "110c"
+smallBtn.TextColor3 = Color3.new(1,1,1)
+smallBtn.TextScaled = true
+smallBtn.Font = Enum.Font.GothamBold
+smallBtn.Parent = screenGui
+smallBtn.Draggable = true
+
+local bigFrame = Instance.new("Frame")
+bigFrame.Size = UDim2.new(0, 260, 0, 130)
+bigFrame.Position = UDim2.new(0.5, -130, 0.4, 0)
+bigFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+bigFrame.BorderSizePixel = 0
+bigFrame.Visible = false
+bigFrame.Parent = screenGui
+bigFrame.Active = true
+bigFrame.Draggable = true
+
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = bigFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -70, 1, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Remove Textures"
+titleLabel.TextColor3 = Color3.new(1,1,1)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 16
+titleLabel.Parent = titleBar
+
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -35, 0, 0)
+minimizeBtn.BackgroundTransparency = 1
+minimizeBtn.Text = "−"
+minimizeBtn.TextColor3 = Color3.new(1,1,1)
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 20
+minimizeBtn.Parent = titleBar
+
+local removeBtn = Instance.new("TextButton")
+removeBtn.Size = UDim2.new(1, -20, 0, 70)
+removeBtn.Position = UDim2.new(0, 10, 0, 45)
+removeBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+removeBtn.Text = "Remove Textures"
+removeBtn.TextColor3 = Color3.new(1,1,1)
+removeBtn.TextScaled = true
+removeBtn.Font = Enum.Font.GothamBold
+removeBtn.Parent = bigFrame
+
+local function stripEverything()
+    removeBtn.Text = "..."
+    removeBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
+    
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") then
+            for _, v in ipairs(obj:GetChildren()) do
+                if v:IsA("Decal") or v:IsA("Texture") or v:IsA("SurfaceAppearance") then
+                    v:Destroy()
+                end
+            end
+            obj.Material = Enum.Material.Plastic
+            obj.Color = Color3.fromRGB(100, 100, 100)
+        end
+    end
+    
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.Character then
+            local char = plr.Character
+            for _, v in ipairs(char:GetChildren()) do
+                if v:IsA("Accessory") or v:IsA("Hat") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("Clothing") then
+                    v:Destroy()
+                end
+            end
+            local head = char:FindFirstChild("Head")
+            if head then
+                for _, v in ipairs(head:GetChildren()) do
+                    if v:IsA("Decal") and string.lower(v.Name) ~= "face" then
+                        v:Destroy()
+                    end
+                end
+            end
+            for _, part in ipairs(char:GetChildren()) do
+                if part:IsA("BasePart") and part.Name ~= "Head" then
+                    part.Material = Enum.Material.Plastic
+                    part.Color = Color3.fromRGB(163, 162, 165)
+                end
+            end
+        end
+    end
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "110c",
+        Text = "done",
+        Duration = 5
+    })
+    
+    task.wait(1.5)
+    removeBtn.Text = "Remove Textures"
+    removeBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+end
+
+smallBtn.MouseButton1Click:Connect(function()
+    bigFrame.Visible = true
+    smallBtn.Visible = false
+end)
+
+minimizeBtn.MouseButton1Click:Connect(function()
+    bigFrame.Visible = false
+    smallBtn.Visible = true
+end)
+
+removeBtn.MouseButton1Click:Connect(stripEverything)
