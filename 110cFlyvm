@@ -4,6 +4,9 @@ local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
+if _G["110cFLYv8"] then return end
+_G["110cFLYv8"] = true
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "110cFlyvmplaza"
 gui.ResetOnSpawn = false
