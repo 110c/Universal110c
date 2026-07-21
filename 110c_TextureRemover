@@ -2,6 +2,8 @@ local CoreGui = game.CoreGui
 local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 
+if CoreGui:FindFirstChild("TextureRemover") then return end
+
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TextureRemover"
 screenGui.ResetOnSpawn = false
