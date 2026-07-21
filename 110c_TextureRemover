@@ -1,13 +1,9 @@
 local CoreGui = game.CoreGui
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
-for _, v in ipairs(CoreGui:GetChildren()) do
-    if v.Name == "110c_TextureRemover" then v:Destroy() end
-end
+local Camera = workspace.CurrentCamera
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "110c_TextureRemover"
+screenGui.Name = "TextureRemover"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = CoreGui
 
@@ -41,7 +37,7 @@ titleBar.Parent = bigFrame
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -70, 1, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Remove Textures"
+titleLabel.Text = "Texture Remover"
 titleLabel.TextColor3 = Color3.new(1,1,1)
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 16
@@ -57,20 +53,35 @@ minimizeBtn.Font = Enum.Font.GothamBold
 minimizeBtn.TextSize = 20
 minimizeBtn.Parent = titleBar
 
-local removeBtn = Instance.new("TextButton")
-removeBtn.Size = UDim2.new(1, -20, 0, 70)
-removeBtn.Position = UDim2.new(0, 10, 0, 45)
-removeBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-removeBtn.Text = "Remove Textures"
-removeBtn.TextColor3 = Color3.new(1,1,1)
-removeBtn.TextScaled = true
-removeBtn.Font = Enum.Font.GothamBold
-removeBtn.Parent = bigFrame
+local gitLabel = Instance.new("TextLabel")
+gitLabel.Size = UDim2.new(1, 0, 0, 15)
+gitLabel.Position = UDim2.new(0, 0, 0, 30)
+gitLabel.BackgroundTransparency = 1
+gitLabel.Text = "Github.com/110c"
+gitLabel.TextColor3 = Color3.new(1,1,1)
+gitLabel.TextTransparency = 0.5
+gitLabel.Font = Enum.Font.Gotham
+gitLabel.TextSize = 11
+gitLabel.Parent = bigFrame
+
+local autoToggleBtn = Instance.new("TextButton")
+autoToggleBtn.Size = UDim2.new(0, 160, 0, 70)
+autoToggleBtn.Position = UDim2.new(0, 10, 0, 45)
+autoToggleBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+autoToggleBtn.Text = ""
+autoToggleBtn.TextColor3 = Color3.new(1,1,1)
+autoToggleBtn.Font = Enum.Font.GothamBold
+autoToggleBtn.TextScaled = true
+autoToggleBtn.Parent = bigFrame
+
+local manualBtn = Instance.new("TextButton")
+manualBtn.Size = UDim2.new(0, 80, 0, 70)
+manualBtn.Position = UDim2.new(0, 170, 0, 45)
+manualBtn.BackgroundColor3 = Color3.new(1,1,1)
+manualBtn.Text = ""
+manualBtn.Parent = bigFrame
 
 local function stripEverything()
-    removeBtn.Text = "..."
-    removeBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
-    
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") then
             for _, v in ipairs(obj:GetChildren()) do
@@ -82,7 +93,7 @@ local function stripEverything()
             obj.Color = Color3.fromRGB(100, 100, 100)
         end
     end
-    
+
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr.Character then
             local char = plr.Character
@@ -107,26 +118,86 @@ local function stripEverything()
             end
         end
     end
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "110c",
-        Text = "done",
-        Duration = 5
-    })
-    
-    task.wait(1.5)
-    removeBtn.Text = "Remove Textures"
-    removeBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
 end
+
+local autoActive = false
+local autoThread = nil
+
+local function stopAuto()
+    autoActive = false
+    if autoThread then
+        task.cancel(autoThread)
+        autoThread = nil
+    end
+    autoToggleBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+    autoToggleBtn.Text = ""
+end
+
+local function startAutoIfVisible()
+    if not autoActive then return end
+    if not bigFrame.Visible then return end
+    if autoThread then task.cancel(autoThread) end
+
+    autoToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+
+    autoThread = task.spawn(function()
+        while autoActive and bigFrame.Visible do
+            for i = 10, 1, -1 do
+                if not autoActive or not bigFrame.Visible then return end
+                autoToggleBtn.Text = tostring(i)
+                task.wait(1)
+            end
+            if autoActive and bigFrame.Visible then
+                stripEverything()
+            else
+                return
+            end
+        end
+    end)
+end
+
+-- Toggle auto on/off
+autoToggleBtn.MouseButton1Click:Connect(function()
+    if autoActive then
+        stopAuto()
+    else
+        autoActive = true
+        startAutoIfVisible()
+    end
+end)
 
 smallBtn.MouseButton1Click:Connect(function()
     bigFrame.Visible = true
     smallBtn.Visible = false
+    if autoActive then
+        startAutoIfVisible()
+    end
 end)
 
 minimizeBtn.MouseButton1Click:Connect(function()
     bigFrame.Visible = false
     smallBtn.Visible = true
+    if autoThread then
+        task.cancel(autoThread)
+        autoThread = nil
+    end
 end)
 
-removeBtn.MouseButton1Click:Connect(stripEverything)
+local function clampFrame(frame)
+    local function doClamp()
+        local absPos = frame.AbsolutePosition
+        local absSize = frame.AbsoluteSize
+        local screenSize = Camera.ViewportSize
+        local newX = math.clamp(absPos.X, 0, math.max(0, screenSize.X - absSize.X))
+        local newY = math.clamp(absPos.Y, 0, math.max(0, screenSize.Y - absSize.Y))
+        if newX ~= absPos.X or newY ~= absPos.Y then
+            frame.Position = UDim2.new(0, newX, 0, newY)
+        end
+    end
+    frame:GetPropertyChangedSignal("Position"):Connect(doClamp)
+    Camera:GetPropertyChangedSignal("ViewportSize"):Connect(doClamp)
+    doClamp()
+end
+
+clampFrame(bigFrame)
+clampFrame(smallBtn)
