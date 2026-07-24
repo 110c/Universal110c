@@ -1,5 +1,6 @@
 local CoreGui = game.CoreGui
 local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 if CoreGui:FindFirstChild("TextureRemover") then return end
@@ -84,7 +85,12 @@ manualBtn.Text = ""
 manualBtn.Parent = bigFrame
 
 local function stripEverything()
+    local myChar = player.Character
+
     for _, obj in ipairs(workspace:GetDescendants()) do
+        if myChar and obj:IsDescendantOf(myChar) then
+            continue
+        end
         if obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") then
             for _, v in ipairs(obj:GetChildren()) do
                 if v:IsA("Decal") or v:IsA("Texture") or v:IsA("SurfaceAppearance") then
@@ -97,6 +103,7 @@ local function stripEverything()
     end
 
     for _, plr in ipairs(Players:GetPlayers()) do
+        if plr == player then continue end
         if plr.Character then
             local char = plr.Character
             for _, v in ipairs(char:GetChildren()) do
@@ -131,57 +138,88 @@ local function stopAuto()
         task.cancel(autoThread)
         autoThread = nil
     end
+
     autoToggleBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
     autoToggleBtn.Text = ""
 end
 
-local function startAutoIfVisible()
-    if not autoActive then return end
-    if not bigFrame.Visible then return end
-    if autoThread then task.cancel(autoThread) end
+local function startAuto()
+    if autoActive then return end
+    autoActive = true
 
     autoToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
 
     autoThread = task.spawn(function()
-        while autoActive and bigFrame.Visible do
-            for i = 10, 1, -1 do
-                if not autoActive or not bigFrame.Visible then return end
+        while autoActive do
+            for i = 30, 1, -1 do
+                if not autoActive then return end
                 autoToggleBtn.Text = tostring(i)
                 task.wait(1)
             end
-            if autoActive and bigFrame.Visible then
+            if autoActive then
                 stripEverything()
-            else
-                return
             end
         end
     end)
 end
 
--- Toggle auto on/off
 autoToggleBtn.MouseButton1Click:Connect(function()
     if autoActive then
         stopAuto()
     else
-        autoActive = true
-        startAutoIfVisible()
+        startAuto()
     end
+end)
+
+local lastManual = 0
+manualBtn.MouseButton1Click:Connect(function()
+    if tick() - lastManual < 1 then return end
+    lastManual = tick()
+    stripEverything()
 end)
 
 smallBtn.MouseButton1Click:Connect(function()
     bigFrame.Visible = true
     smallBtn.Visible = false
-    if autoActive then
-        startAutoIfVisible()
-    end
 end)
 
 minimizeBtn.MouseButton1Click:Connect(function()
     bigFrame.Visible = false
     smallBtn.Visible = true
-    if autoThread then
-        task.cancel(autoThread)
-        autoThread = nil
+end)
+
+local cycleState = false
+
+local function applyCycle()
+    if cycleState then
+
+        smallBtn.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+        smallBtn.Text = "100qa"
+        titleBar.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+        gitLabel.Text = "Discord @100qa"
+
+        if not autoActive then
+            autoToggleBtn.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
+        end
+    else
+
+        smallBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        smallBtn.Text = "110c"
+        titleBar.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        gitLabel.Text = "Github.com/110c"
+        if not autoActive then
+            autoToggleBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        end
+    end
+end
+
+applyCycle()
+
+task.spawn(function()
+    while true do
+        task.wait(15)
+        cycleState = not cycleState
+        applyCycle()
     end
 end)
 
