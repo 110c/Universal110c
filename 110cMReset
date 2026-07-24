@@ -1,9 +1,34 @@
-local plr = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
-function resetPlr()
-    if plr.Character then
-        plr.Character:BreakJoints()
-    end
-end
+if game.CoreGui:FindFirstChild("ResetButton") then return end
 
-resetPlr()
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ResetButton"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = game.CoreGui
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 35, 0, 35)
+button.AnchorPoint = Vector2.new(0.5, 0)
+button.Position = UDim2.new(0.75, 0, 0, 10)
+button.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+button.Text = "Reset"
+button.TextColor3 = Color3.new(1, 1, 1)
+button.TextScaled = true
+button.Font = Enum.Font.GothamBold
+button.ZIndex = 10
+button.Parent = screenGui
+
+local lastReset = 0
+button.Activated:Connect(function()
+	local now = tick()
+	if now - lastReset < 1 then return end=
+	if not player.Character then return end
+	lastReset = now
+	task.wait(0.1)
+	if player.Character then
+		player.Character:BreakJoints()
+	end
+end)
