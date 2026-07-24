@@ -4,7 +4,7 @@ local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
 
 if player.PlayerGui:FindFirstChild("100v.v.v") then
-    player.PlayerGui:FindFirstChild("100v.v.v"):Destroy()
+    return
 end
 
 local ScreenGui = Instance.new("ScreenGui")
