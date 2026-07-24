@@ -24,7 +24,7 @@ button.Parent = screenGui
 local lastReset = 0
 button.Activated:Connect(function()
 	local now = tick()
-	if now - lastReset < 1 then return end=
+	if now - lastReset < 1 then return end
 	if not player.Character then return end
 	lastReset = now
 	task.wait(0.1)
