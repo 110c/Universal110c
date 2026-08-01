@@ -1,0 +1,337 @@
+if game:GetService("CoreGui"):FindFirstChild("FreeAntiAFK") then return end
+
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Camera = workspace.CurrentCamera
+
+local VirtualInputManager = nil
+pcall(function() VirtualInputManager = game:GetService("VirtualInputManager") end)
+
+local BG = Color3.fromRGB(20, 20, 20)
+local GREY = Color3.fromRGB(60, 60, 60)
+local WHITE = Color3.new(1,1,1)
+local BLUE = Color3.fromRGB(0, 120, 255)
+local RED = Color3.fromRGB(200, 50, 50)
+local DARK = Color3.fromRGB(30, 30, 30)
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "FreeAntiAFK"
+gui.ResetOnSpawn = false
+gui.Parent = CoreGui
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 200, 0, 130)
+frame.Position = UDim2.new(0.5, -100, 0.5, -65)
+frame.BackgroundColor3 = BG
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.ClipsDescendants = true
+
+local titleBar = Instance.new("Frame", frame)
+titleBar.Size = UDim2.new(1, 0, 0, 24)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleBar.BorderSizePixel = 0
+titleBar.Active = true
+
+local titleLabel = Instance.new("TextLabel", titleBar)
+titleLabel.Size = UDim2.new(1, -36, 1, 0)
+titleLabel.Position = UDim2.new(0, 8, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "1ra"
+titleLabel.TextColor3 = WHITE
+titleLabel.Font = Enum.Font.ArialBold
+titleLabel.TextSize = 14
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local miniBtn = Instance.new("TextButton", titleBar)
+miniBtn.Size = UDim2.new(0, 24, 0, 24)
+miniBtn.Position = UDim2.new(1, -28, 0, 0)
+miniBtn.BackgroundTransparency = 1
+miniBtn.Text = "–"
+miniBtn.TextColor3 = WHITE
+miniBtn.Font = Enum.Font.GothamBold
+miniBtn.TextSize = 16
+
+local dragging, dragStart, startPos = false, nil, nil
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
+end)
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		local newX = startPos.X.Offset + delta.X
+		local newY = startPos.Y.Offset + delta.Y
+		local screenSize = Camera.ViewportSize
+		newX = math.clamp(newX, 0, screenSize.X - frame.AbsoluteSize.X)
+		newY = math.clamp(newY, 0, screenSize.Y - frame.AbsoluteSize.Y)
+		frame.Position = UDim2.new(0, newX, 0, newY)
+	end
+end)
+
+local minimized = false
+local expandedSize = frame.Size
+local minimizedSize = UDim2.new(expandedSize.X.Scale, expandedSize.X.Offset, 0, 24)
+
+local contentRows = {}
+for _, child in ipairs(frame:GetChildren()) do
+	if child ~= titleBar then
+		table.insert(contentRows, child)
+	end
+end
+
+local function setMinimized(on)
+	minimized = on
+	if minimized then
+		frame.Size = minimizedSize
+		miniBtn.Text = "+"
+		for _, row in ipairs(contentRows) do
+			row.Visible = false
+		end
+	else
+		frame.Size = expandedSize
+		miniBtn.Text = "–"
+		for _, row in ipairs(contentRows) do
+			row.Visible = true
+		end
+	end
+end
+
+miniBtn.MouseButton1Click:Connect(function()
+	setMinimized(not minimized)
+end)
+
+local function createButton(parent, pos, size, text, color)
+	local btn = Instance.new("TextButton", parent)
+	btn.Size = UDim2.new(size.X.Scale, size.X.Offset, size.Y.Scale, size.Y.Offset)
+	btn.Position = UDim2.new(pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
+	btn.BackgroundColor3 = color or GREY
+	btn.Text = text
+	btn.TextColor3 = WHITE
+	btn.Font = Enum.Font.ArialBold
+	btn.TextScaled = true
+	btn.BorderSizePixel = 0
+	return btn
+end
+
+local function createLabel(parent, pos, size, text)
+	local lbl = Instance.new("TextLabel", parent)
+	lbl.Size = UDim2.new(size.X.Scale, size.X.Offset, size.Y.Scale, size.Y.Offset)
+	lbl.Position = UDim2.new(pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
+	lbl.BackgroundColor3 = DARK
+	lbl.Text = text
+	lbl.TextColor3 = WHITE
+	lbl.Font = Enum.Font.Code
+	lbl.TextScaled = true
+	lbl.BorderSizePixel = 0
+	return lbl
+end
+
+local function createTextBox(parent, pos, size, text)
+	local box = Instance.new("TextBox", parent)
+	box.Size = UDim2.new(size.X.Scale, size.X.Offset, size.Y.Scale, size.Y.Offset)
+	box.Position = UDim2.new(pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
+	box.BackgroundColor3 = DARK
+	box.Text = text
+	box.TextColor3 = WHITE
+	box.Font = Enum.Font.Code
+	box.TextScaled = true
+	box.BorderSizePixel = 0
+	box.ClearTextOnFocus = false
+	return box
+end
+
+local timerRow = Instance.new("Frame", frame)
+timerRow.Size = UDim2.new(1, 0, 0, 30)
+timerRow.Position = UDim2.new(0, 0, 0, 28)
+timerRow.BackgroundTransparency = 1
+
+local timerBox = createTextBox(timerRow, UDim2.new(0, 0, 0, 0), UDim2.new(0.42, 0, 1, 0), "00:05:00")
+timerBox.Position = UDim2.new(0, 4, 0, 0)
+
+local timerStartBtn = createButton(timerRow, UDim2.new(0.44, 0, 0, 0), UDim2.new(0.17, 0, 1, 0), "START", BLUE)
+local timerResetBtn = createButton(timerRow, UDim2.new(0.62, 0, 0, 0), UDim2.new(0.17, 0, 1, 0), "RESET", GREY)
+local timerLabel = createLabel(timerRow, UDim2.new(0.8, 0, 0, 0), UDim2.new(0.18, 0, 1, 0), "TIMER")
+timerLabel.BackgroundTransparency = 1
+timerLabel.Text = "TIMER"
+timerLabel.Font = Enum.Font.ArialBold
+timerLabel.TextColor3 = Color3.fromRGB(180,180,180)
+
+local timerTime = 300
+local timerRunning = false
+
+local function formatTime(seconds)
+	local h = math.floor(seconds / 3600)
+	local m = math.floor((seconds % 3600) / 60)
+	local s = seconds % 60
+	return string.format("%02d:%02d:%02d", h, m, s)
+end
+
+timerBox.FocusLost:Connect(function()
+	if not timerRunning then
+		local input = timerBox.Text:gsub(":", "")
+		if timerBox.Text:find(":") then
+			local num = tonumber(input) or 0
+			num = math.clamp(num, 0, 995959)
+			local h = math.floor(num / 10000)
+			local m = math.floor((num % 10000) / 100)
+			local s = num % 100
+			timerTime = h*3600 + m*60 + s
+		else
+			local minutes = tonumber(input) or 0
+			minutes = math.clamp(minutes, 0, 99999)
+			timerTime = minutes * 60
+		end
+		timerBox.Text = formatTime(timerTime)
+	end
+end)
+
+timerStartBtn.MouseButton1Click:Connect(function()
+	if timerRunning then
+		timerRunning = false
+		timerStartBtn.Text = "START"
+		timerStartBtn.BackgroundColor3 = BLUE
+		timerBox.TextEditable = true
+	else
+		if timerTime > 0 then
+			timerRunning = true
+			timerStartBtn.Text = "STOP"
+			timerStartBtn.BackgroundColor3 = RED
+			timerBox.TextEditable = false
+		end
+	end
+end)
+
+timerResetBtn.MouseButton1Click:Connect(function()
+	if not timerRunning then
+		timerTime = 0
+		timerBox.Text = "00:00:00"
+		timerStartBtn.Text = "START"
+		timerStartBtn.BackgroundColor3 = BLUE
+		timerBox.TextEditable = true
+	end
+end)
+
+task.spawn(function()
+	while true do
+		if timerRunning and timerTime > 0 then
+			timerTime -= 1
+			timerBox.Text = formatTime(timerTime)
+			if timerTime <= 0 then
+				timerRunning = false
+				timerStartBtn.Text = "START"
+				timerStartBtn.BackgroundColor3 = BLUE
+				timerBox.TextEditable = true
+			end
+		end
+		task.wait(1)
+	end
+end)
+
+local swRow = Instance.new("Frame", frame)
+swRow.Size = UDim2.new(1, 0, 0, 30)
+swRow.Position = UDim2.new(0, 0, 0, 62)
+swRow.BackgroundTransparency = 1
+
+local swDisplay = createLabel(swRow, UDim2.new(0, 0, 0, 0), UDim2.new(0.42, 0, 1, 0), "00:00:00.00")
+swDisplay.Position = UDim2.new(0, 4, 0, 0)
+
+local swStartBtn = createButton(swRow, UDim2.new(0.44, 0, 0, 0), UDim2.new(0.17, 0, 1, 0), "START", BLUE)
+local swResetBtn = createButton(swRow, UDim2.new(0.62, 0, 0, 0), UDim2.new(0.17, 0, 1, 0), "RESET", GREY)
+local swLabel = createLabel(swRow, UDim2.new(0.8, 0, 0, 0), UDim2.new(0.18, 0, 1, 0), "STOPWATCH")
+swLabel.BackgroundTransparency = 1
+swLabel.Text = "SW"
+swLabel.Font = Enum.Font.ArialBold
+swLabel.TextColor3 = Color3.fromRGB(180,180,180)
+
+local swRunning = false
+local swStartTime = 0
+local swPaused = 0
+
+local function swFormat()
+	local elapsed = swRunning and (os.clock() - swStartTime) or swPaused
+	local h = math.floor(elapsed / 3600)
+	local m = math.floor((elapsed % 3600) / 60)
+	local s = math.floor(elapsed % 60)
+	local ms = math.floor((elapsed % 1) * 100)
+	return string.format("%02d:%02d:%02d.%02d", h, m, s, ms)
+end
+
+task.spawn(function()
+	while true do
+		if swRunning then swDisplay.Text = swFormat() end
+		task.wait(0.01)
+	end
+end)
+
+swStartBtn.MouseButton1Click:Connect(function()
+	if swRunning then
+		swPaused = os.clock() - swStartTime
+		swRunning = false
+		swStartBtn.Text = "RESUME"
+		swStartBtn.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+	else
+		swStartTime = os.clock() - swPaused
+		swRunning = true
+		swStartBtn.Text = "PAUSE"
+		swStartBtn.BackgroundColor3 = BLUE
+	end
+end)
+
+swResetBtn.MouseButton1Click:Connect(function()
+	if not swRunning then
+		swPaused = 0
+		swDisplay.Text = "00:00:00.00"
+		swStartBtn.Text = "START"
+		swStartBtn.BackgroundColor3 = BLUE
+	end
+end)
+
+local afkRow = Instance.new("Frame", frame)
+afkRow.Size = UDim2.new(1, 0, 0, 26)
+afkRow.Position = UDim2.new(0, 0, 0, 100)
+afkRow.BackgroundTransparency = 1
+
+local antiAfkEnabled = false
+local antiAfkLoop = nil
+
+local antiAfkBtn = createButton(afkRow, UDim2.new(0, 0, 0, 0), UDim2.new(0.42, 0, 1, 0), "Anti AFK: OFF", RED)
+antiAfkBtn.Position = UDim2.new(0, 4, 0, 0)
+
+antiAfkBtn.MouseButton1Click:Connect(function()
+	antiAfkEnabled = not antiAfkEnabled
+	antiAfkBtn.Text = antiAfkEnabled and "Anti AFK: ON" or "Anti AFK: OFF"
+	antiAfkBtn.BackgroundColor3 = antiAfkEnabled and BLUE or RED
+
+	if antiAfkEnabled and not antiAfkLoop then
+		antiAfkLoop = task.spawn(function()
+			while antiAfkEnabled do
+				task.wait(50)
+				if not antiAfkEnabled then break end
+				if VirtualInputManager then
+					VirtualInputManager:SendMouseButtonEvent(3, 3, 0, true, game, 0)
+					task.wait(0.05)
+					VirtualInputManager:SendMouseButtonEvent(3, 3, 0, false, game, 0)
+					task.wait(0.05)
+					VirtualInputManager:SendMouseButtonEvent(3, 3, 0, true, game, 0)
+					task.wait(0.05)
+					VirtualInputManager:SendMouseButtonEvent(3, 3, 0, false, game, 0)
+				else
+					local mouse = UserInputService:GetMouseLocation()
+					pcall(function() game:GetService("VirtualInputManager"):SendMouseMoveEvent(mouse.X+1, mouse.Y+1, game) end)
+					task.wait(0.1)
+					pcall(function() game:GetService("VirtualInputManager"):SendMouseMoveEvent(mouse.X, mouse.Y, game) end)
+				end
+			end
+			antiAfkLoop = nil
+		end)
+	end
+end)
