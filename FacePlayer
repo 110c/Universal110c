@@ -1,0 +1,198 @@
+if _G.FaceClosestPlayer_loaded then return end
+_G.FaceClosestPlayer_loaded = true
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Camera = workspace.CurrentCamera
+local player = Players.LocalPlayer
+
+local enabled = false
+local gyro = nil
+local matchedName = ""
+local heartbeatConnection = nil
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "FaceClosestPlayer"
+gui.ResetOnSpawn = false
+gui.Parent = CoreGui
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 170, 0, 72)
+frame.Position = UDim2.new(0, 20, 0, 100)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BorderSizePixel = 0
+frame.Active = true
+
+local titleBar = Instance.new("Frame", frame)
+titleBar.Size = UDim2.new(1, 0, 0, 22)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleBar.BorderSizePixel = 0
+titleBar.Active = true
+
+local titleLabel = Instance.new("TextLabel", titleBar)
+titleLabel.Size = UDim2.new(1, -6, 1, 0)
+titleLabel.Position = UDim2.new(0, 6, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Face Player"
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.Font = Enum.Font.ArialBold
+titleLabel.TextSize = 12
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local dragging = false
+local dragStart = nil
+local frameStartPos = nil
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        frameStartPos = frame.Position
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        local newX = frameStartPos.X.Offset + delta.X
+        local newY = frameStartPos.Y.Offset + delta.Y
+        local screenSize = Camera.ViewportSize
+        local frameSize = frame.AbsoluteSize
+        newX = math.clamp(newX, 0, screenSize.X - frameSize.X)
+        newY = math.clamp(newY, 0, screenSize.Y - frameSize.Y)
+        frame.Position = UDim2.new(0, newX, 0, newY)
+    end
+end)
+
+local button = Instance.new("TextButton", frame)
+button.Size = UDim2.new(0, 130, 0, 20)
+button.Position = UDim2.new(0.5, -65, 0, 24)
+button.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+button.Text = "Face Player: OFF"
+button.TextColor3 = Color3.new(1, 1, 1)
+button.Font = Enum.Font.ArialBold
+button.TextSize = 11
+button.BorderSizePixel = 0
+button.Active = true
+
+local nameBox = Instance.new("TextBox", frame)
+nameBox.Size = UDim2.new(1, -16, 0, 20)
+nameBox.Position = UDim2.new(0, 8, 0, 48)
+nameBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+nameBox.TextColor3 = Color3.new(1, 1, 1)
+nameBox.Font = Enum.Font.Arial
+nameBox.TextSize = 11
+nameBox.PlaceholderText = "Part of username"
+nameBox.Text = ""
+nameBox.BorderSizePixel = 0
+nameBox.ClearTextOnFocus = false
+
+local function updateMatch()
+    local input = nameBox.Text:gsub("%s+", "")
+    if input == "" then
+        matchedName = ""
+        return
+    end
+    
+	local lowerInput = input:lower()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Name:lower():find(lowerInput, 1, true) then
+            matchedName = plr.Name
+            return
+        end
+    end
+    
+	matchedName = ""
+end
+
+nameBox.FocusLost:Connect(updateMatch)
+
+local function toggle()
+    if not enabled and matchedName == "" then
+        return
+    end
+
+    enabled = not enabled
+    button.BackgroundColor3 = enabled and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(100, 100, 100)
+    button.Text = enabled and "Face Player: ON" or "Face Player: OFF"
+
+    if enabled then
+        if heartbeatConnection then heartbeatConnection:Disconnect() end
+        heartbeatConnection = RunService.Heartbeat:Connect(function()
+            local char = player.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+            if hrp and matchedName ~= "" then
+                local targetPlayer = Players:FindFirstChild(matchedName)
+                local targetHrp = targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+                if targetHrp then
+                    if not gyro or not gyro.Parent then
+                        if gyro then gyro:Destroy() end
+                        gyro = Instance.new("BodyGyro")
+                        gyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+                        gyro.D = 1000
+                        gyro.P = 10000
+                        gyro.Parent = hrp
+                    end
+
+                    local myPos = hrp.Position
+                    local targetPos = targetHrp.Position
+                    local horizontalTarget = Vector3.new(targetPos.X, myPos.Y, targetPos.Z)
+                    gyro.CFrame = CFrame.lookAt(myPos, horizontalTarget)
+                else
+
+                    if gyro then
+                        gyro:Destroy()
+                        gyro = nil
+                    end
+                end
+            else
+
+                if gyro then
+                    gyro:Destroy()
+                    gyro = nil
+                end
+            end
+        end)
+    else
+
+        if heartbeatConnection then
+            heartbeatConnection:Disconnect()
+            heartbeatConnection = nil
+        end
+        if gyro then
+            gyro:Destroy()
+            gyro = nil
+        end
+    end
+end
+
+local function isDrag()
+    if dragging and dragStart and frameStartPos then
+        local dx = frame.Position.X.Offset - frameStartPos.X.Offset
+        local dy = frame.Position.Y.Offset - frameStartPos.Y.Offset
+        return (dx*dx + dy*dy) > 9
+    end
+    return false
+end
+
+button.MouseButton1Click:Connect(function()
+    if isDrag() then return end
+    toggle()
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    if plr.Name == matchedName then
+        matchedName = ""
+        nameBox.Text = ""
+    end
+end)
